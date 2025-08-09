@@ -1,0 +1,352 @@
+[
+    {
+        "id": "f6e31c97b636acdf",
+        "type": "tab",
+        "label": "3D Plot",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "b2fc2e4c7a76e507",
+        "type": "function",
+        "z": "f6e31c97b636acdf",
+        "name": "Format Data MPU",
+        "func": "let data = msg.payload;\nmsg.payload = `\n<script>\n  if (window.cube) {\n    cube.rotation.x = ${data.x};\n    cube.rotation.y = ${data.y};\n    cube.rotation.z = ${data.z};\n  }\n</script>\n`;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 550,
+        "y": 340,
+        "wires": [
+            [
+                "7cbe9c6792c4f69c"
+            ]
+        ]
+    },
+    {
+        "id": "7cbe9c6792c4f69c",
+        "type": "ui_template",
+        "z": "f6e31c97b636acdf",
+        "group": "b1a3c42ef9619276",
+        "name": "3D MPU Viewer",
+        "order": 1,
+        "width": "6",
+        "height": "5",
+        "format": "<script src=\"https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js\"></script>\n<div id=\"viewer\" style=\"width:100%; height:400px;\"></div>\n<script>\n(function() {\n    let container = document.getElementById(\"viewer\");\n    let scene = new THREE.Scene();\n    let camera = new THREE.PerspectiveCamera(75, container.clientWidth / 400, 0.1, 1000);\n    let renderer = new THREE.WebGLRenderer({antialias: true});\n    renderer.setSize(container.clientWidth, 400);\n    container.innerHTML = \"\";\n    container.appendChild(renderer.domElement);\n\n    let geometry = new THREE.BoxGeometry(1, 1, 1);\n    let material = new THREE.MeshNormalMaterial();\n    let cube = new THREE.Mesh(geometry, material);\n    scene.add(cube);\n    camera.position.z = 5;\n\n    function animate() {\n        requestAnimationFrame(animate);\n        cube.rotation.x += 0.01;\n        cube.rotation.y += 0.01;\n        renderer.render(scene, camera);\n    }\n    animate();\n})();\n</script>\n",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 790,
+        "y": 340,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "1cae56a7c11421dd",
+        "type": "mqtt in",
+        "z": "f6e31c97b636acdf",
+        "name": "",
+        "topic": "indonesia/longsor/sensor1",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "318b17f1ca453371",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 310,
+        "y": 280,
+        "wires": [
+            [
+                "7a09eacc37d6b8c5",
+                "fabf5ca90ef8cfbb",
+                "dfd1ca241710997c"
+            ]
+        ]
+    },
+    {
+        "id": "7a09eacc37d6b8c5",
+        "type": "function",
+        "z": "f6e31c97b636acdf",
+        "name": "function 3",
+        "func": "return {\n  payload: {\n    x: msg.payload.accX,\n    y: msg.payload.accY,\n    z: msg.payload.accZ\n  }\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 540,
+        "y": 280,
+        "wires": [
+            [
+                "fa7f2b20f8f919c0"
+            ]
+        ]
+    },
+    {
+        "id": "fa7f2b20f8f919c0",
+        "type": "ui_template",
+        "z": "f6e31c97b636acdf",
+        "group": "341509739d9323e7",
+        "name": "",
+        "order": 1,
+        "width": 8,
+        "height": 10,
+        "format": "<div id=\"plot3d\" style=\"width:100%;height:600px;\"></div>\n<script src=\"https://cdn.plot.ly/plotly-latest.min.js\"></script>\n<script>\n(function(scope) {\n    let xData = [], yData = [], zData = [];\n\n    scope.$watch('msg.payload', function(data) {\n        if (!data) return;\n\n        xData.push(data.x);\n        yData.push(data.y);\n        zData.push(data.z);\n\n        if (xData.length > 100) {\n            xData.shift();\n            yData.shift();\n            zData.shift();\n        }\n\n        var trace = {\n            x: xData,\n            y: yData,\n            z: zData,\n            mode: 'lines+markers',\n            type: 'scatter3d',\n            marker: {\n                size: 4,\n                color: 'red'\n            },\n            line: {\n                width: 2,\n                color: 'blue'\n            }\n        };\n\n        var layout = {\n            margin: { l:0, r:0, b:0, t:30 },\n            title: 'Plot 3D Akselerasi (X, Y, Z)'\n        };\n\n        Plotly.newPlot('plot3d', [trace], layout);\n    });\n})(scope);\n</script>\n",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 720,
+        "y": 280,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "fabf5ca90ef8cfbb",
+        "type": "function",
+        "z": "f6e31c97b636acdf",
+        "name": "Kelembaban tanah",
+        "func": "// Function Node untuk proses data kelembaban tanah\nlet data = (typeof msg.payload === 'string') ? JSON.parse(msg.payload) : msg.payload;\n\nconst timestamp = new Date().toISOString();\n\nconst payloadSoil = { \n    topic: \"soilMoisture\", \n    payload: parseFloat(data.soilMoisture) || 0, \n    timestamp \n};\n\nreturn [payloadSoil];\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 570,
+        "y": 460,
+        "wires": [
+            [
+                "d915e493bd65fdec"
+            ]
+        ]
+    },
+    {
+        "id": "d915e493bd65fdec",
+        "type": "ui_chart",
+        "z": "f6e31c97b636acdf",
+        "name": "",
+        "group": "341509739d9323e7",
+        "order": 2,
+        "width": 6,
+        "height": 8,
+        "label": "Kelembaban Tanah",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": true,
+        "ymin": "0",
+        "ymax": "100",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 830,
+        "y": 520,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "8bf079c73495a89d",
+        "type": "ui_text",
+        "z": "f6e31c97b636acdf",
+        "group": "341509739d9323e7",
+        "order": 2,
+        "width": "5",
+        "height": "1",
+        "name": "",
+        "label": "Status Lereng",
+        "format": "{{msg.payload}}",
+        "layout": "row-left",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 780,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "dfd1ca241710997c",
+        "type": "function",
+        "z": "f6e31c97b636acdf",
+        "name": "function 5",
+        "func": "// Kalau payload sudah JSON dan ada .status, langsung ambil\nmsg.payload = msg.payload.status || msg.payload.Status || \"Tidak Ada Status\";\nreturn msg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 600,
+        "y": 420,
+        "wires": [
+            [
+                "8bf079c73495a89d"
+            ]
+        ]
+    },
+    {
+        "id": "a261196f9d20d521",
+        "type": "ui_spacer",
+        "z": "f6e31c97b636acdf",
+        "name": "spacer",
+        "group": "b1a3c42ef9619276",
+        "order": 2,
+        "width": 12,
+        "height": 1
+    },
+    {
+        "id": "35c73bb7e291823f",
+        "type": "ui_spacer",
+        "z": "f6e31c97b636acdf",
+        "name": "spacer",
+        "group": "b1a3c42ef9619276",
+        "order": 3,
+        "width": 12,
+        "height": 1
+    },
+    {
+        "id": "750b75a907575951",
+        "type": "ui_spacer",
+        "z": "f6e31c97b636acdf",
+        "name": "spacer",
+        "group": "b1a3c42ef9619276",
+        "order": 4,
+        "width": 12,
+        "height": 1
+    },
+    {
+        "id": "f113dd501eb8e320",
+        "type": "ui_spacer",
+        "z": "f6e31c97b636acdf",
+        "name": "spacer",
+        "group": "b1a3c42ef9619276",
+        "order": 5,
+        "width": 12,
+        "height": 1
+    },
+    {
+        "id": "f71277ffddabcbce",
+        "type": "ui_spacer",
+        "z": "f6e31c97b636acdf",
+        "name": "spacer",
+        "group": "b1a3c42ef9619276",
+        "order": 6,
+        "width": 12,
+        "height": 1
+    },
+    {
+        "id": "d44bdfc3aecd17df",
+        "type": "ui_spacer",
+        "z": "f6e31c97b636acdf",
+        "name": "spacer",
+        "group": "b1a3c42ef9619276",
+        "order": 7,
+        "width": 12,
+        "height": 1
+    },
+    {
+        "id": "355c64d4abe4943e",
+        "type": "ui_spacer",
+        "z": "f6e31c97b636acdf",
+        "name": "spacer",
+        "group": "b1a3c42ef9619276",
+        "order": 8,
+        "width": 12,
+        "height": 1
+    },
+    {
+        "id": "b1a3c42ef9619276",
+        "type": "ui_group",
+        "name": "MPU Test",
+        "tab": "",
+        "order": 1,
+        "disp": true,
+        "width": 12,
+        "collapse": false
+    },
+    {
+        "id": "318b17f1ca453371",
+        "type": "mqtt-broker",
+        "name": "Broker MQTT HIVE MQ Tugas Akhir",
+        "broker": "9d80c245602a498baa5111b6b35f0ddf.s1.eu.hivemq.cloud",
+        "port": "8883",
+        "tls": "",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": true,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": false,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "341509739d9323e7",
+        "type": "ui_group",
+        "name": "Akselerasi X, Y dan Z",
+        "tab": "031dfb6544b3a50f",
+        "order": 2,
+        "disp": true,
+        "width": "14",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "031dfb6544b3a50f",
+        "type": "ui_tab",
+        "name": "Acceleration 3D",
+        "icon": "dashboard",
+        "order": 6,
+        "disabled": false,
+        "hidden": false
+    }
+]

@@ -1,0 +1,12 @@
+{
+  "name": "node-red-app",
+  "version": "1.0.0",
+  "description": "Node-RED on Render",
+  "main": "index.js",
+  "scripts": {
+    "start": "node-red -v -u . --settings ./settings.js --port $PORT"
+  },
+  "dependencies": {
+    "node-red": "^4.0.0"
+  }
+}
